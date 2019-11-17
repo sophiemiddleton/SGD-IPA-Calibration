@@ -40,30 +40,30 @@ struct Event{
 
 double F(Event event, std::vector<double> constants, double F){
 	int sum = 0;
-    for(unsigned int c=0;c < event.cluster_size;c++){
+    	for(unsigned int c=0;c < event.cluster_size;c++){
 		int cry_i = event.crystal_list.crystal_number[c];
-        sum+=constants[cry_i]*event.crystal_list.crystal_energy[c];
+	sum+=constants[cry_i]*event.crystal_list.crystal_energy[c];
 	}
-    F+= pow((sum - event.track_energy)*(1/pow(error,2)) ,2);
-    cout<<"Test f "<<F<<endl;
+    	F+= pow((sum - event.track_energy)*(1/pow(error,2)) ,2);
+    	cout<<"Test f "<<F<<endl;
 	return F;
 }
 
 std::vector<double> IncrementalGradientDescent(Event event, int j, std::vector<double> constants, std::vector<double> seed_constants, double FVAL){
-    double Loss = FVAL;
+    	double Loss = FVAL;
 	double old_c ;
 	double new_c ;
-    double dc;
-    double dFdVm;
-    double dVmdc;
-    bool converged =false;
-    cout<<"init F "<<FVAL<<endl;
-    double InitLoss =F(event, constants,FVAL);
-    std::vector<double> previous_constants = constants;
-    //constraints ??? TODO!!!
-    int k=0;
-    double Etrk = event.track_energy; //Get the trackers output   
-    while(converged == false and k < 100){
+	double dc;
+	double dFdVm;
+	double dVmdc;
+	bool converged =false;
+	cout<<"init F "<<FVAL<<endl;
+	double InitLoss =F(event, constants,FVAL);
+	std::vector<double> previous_constants = constants;
+	//constraints ??? TODO!!!
+	int k=0;
+	double Etrk = event.track_energy; //Get the trackers output   
+	while(converged == false and k < 100){
         cout<<"-------"<<k<<"---------"<<endl;
         for(unsigned int m=0; m<event.cluster_size;m++){
 
@@ -113,52 +113,51 @@ int main(){
     
      double offset = 0.5;
      std::vector<double> RawCalibrationResults;
-	 std::vector<double> offset_vector;
+     std::vector<double> offset_vector;
      for(int c=0;c<N_CRYSTALS;c++){
 		CalibrationConstants.push_back(0);
      }
-	 std::random_device rd;
+     std::random_device rd;
      std::mt19937 mt(rd());
-	 std::normal_distribution<double> te(46.,3.); 
-	 std::normal_distribution<double> cs(4.,1);
-	 std::uniform_real_distribution<double> cn(0, N_CRYSTALS);
-	 std::uniform_real_distribution<double> randoff(0.1, 1.0);
-	 for(int c=0;c<N_CRYSTALS;c++){
-		
-        auto const off = randoff(mt);
+     std::normal_distribution<double> te(46.,3.); 
+     std::normal_distribution<double> cs(4.,1);
+     std::uniform_real_distribution<double> cn(0, N_CRYSTALS);
+     std::uniform_real_distribution<double> randoff(0.1, 1.0);
+     for(int c=0;c<N_CRYSTALS;c++){
+	auto const off = randoff(mt);
         offset_vector.push_back(off);
-		RawCalibrationResults.push_back(off*0.9);
-	 }
+	RawCalibrationResults.push_back(off*0.9);
+      }
 	 for(size_t n=0;n<N_EVENTS;n++){
 		if(n==0){
-            CalibrationConstants = RawCalibrationResults;
-        }
+            		CalibrationConstants = RawCalibrationResults;
+        	}
 		auto const track_energy = te(mt);
 		auto const size = cs(mt);
-        int cluster_size = round(size);
+        	int cluster_size = round(size);
 		
-        std::vector<double> crystal_energy;
+        	std::vector<double> crystal_energy;
 		std::vector<int> crystal_number;
 		
 		for(int m=0;m<cluster_size; m++){
-            int C_number = round(cn(mt));
+            		int C_number = round(cn(mt));
 			crystal_number.push_back(C_number);
-            offset = offset_vector[C_number];
-            crystal_energy.push_back((1/offset)*track_energy/(cluster_size));
+            		offset = offset_vector[C_number];
+            		crystal_energy.push_back((1/offset)*track_energy/(cluster_size));
 			
 		}
        
 		CrystalList crystal_list(crystal_energy,crystal_number);
 		Event event(track_energy,cluster_size,crystal_list);
-        cout<<"FVAL before "<<FVAL<<endl;
-        CalibrationConstants= IncrementalGradientDescent(event, n, CalibrationConstants, RawCalibrationResults, FVAL);
-        cout<<"FVAL after "<<FVAL<<endl;
+       		 cout<<"FVAL before "<<FVAL<<endl;
+        	CalibrationConstants= IncrementalGradientDescent(event, n, CalibrationConstants, RawCalibrationResults, FVAL);
+        	cout<<"FVAL after "<<FVAL<<endl;
       
      }
     
 	for(int i =0 ;i<N_CRYSTALS;i++){
 			std::cout<<"constant for crystal "<<i<<" is "<<CalibrationConstants[i]<<"True Offset is "<<offset_vector[i]<<" Residuals "<<CalibrationConstants[i]-offset_vector[i]<<std::endl;
 		}
-    cout<<"NEvents Processed "<<N_EVENTS<<" NEVents converged "<<N_CONVERGED<<"Final Loss function FVAL "<<FVAL<<endl;
-	return 0;
+        cout<<"NEvents Processed "<<N_EVENTS<<" NEVents converged "<<N_CONVERGED<<"Final Loss function FVAL "<<FVAL<<endl;
+        return 0;
 }
