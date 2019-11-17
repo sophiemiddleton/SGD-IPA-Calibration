@@ -14,7 +14,9 @@ Current Implementation:
   - A loss function is defined as F a cumulative sum over all events computed at the start and end of each crystal list i.e. event
   - The gradient is calculated analytically from partial derivatives for each C_i
   - A step size has not been optimized
-  - For each event the minimization rountine is applied be N_ITERATIONS
-  -The fit is converged if it has < N_ITERATIONS and if F < MAX_FUCNTION. There must also be criteria on dc and dc-seedc but this is still needing to be optimized.
-  -At the end the residuals for all crystals relative to the true offsets input are output to screen
-  -The N_EVENTS can be changed 10000 shows good results, <100 many crystals get no hits. I would say at least 10000 needed.
+  - For each event the minimization rountine is applied be N_ITERATIONS, 100 iterations is a good bet at the moment.
+  - The fit is converged if it has k < N_ITERATIONS and if LossFucntion < MAX_FUCNTION. 
+  - There must also be criteria on dc and constrains defined on dc-seedc but this is still needing to be optimized.
+  - At the end the residuals for all crystals relative to the true offsets input are output to screen
+  - The N_EVENTS :
+        - 10000 shows good results, <100 many crystals get no hits. I would say at least 10000 needed.
