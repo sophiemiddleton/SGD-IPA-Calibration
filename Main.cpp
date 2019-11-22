@@ -78,7 +78,7 @@ std::vector<double> IncrementalGradientDescent(Event event, int j, std::vector<d
               
                     new_c = (constants[Cm] - step_size*(1/event.cluster_size)*(1/pow(error,2))*constants[Cm]*dFdVm*dVmdc);
                     dc = abs(new_c - constants[Cm]); 
-                    if(dc < 0.1 and (new_c - seed_constants[m])<0.1){
+                    if(dc < dcmin and abs(new_c - seed_constants[m])<dcmin){
                         constants[Cm] = new_c; 
                     }
              }
