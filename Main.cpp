@@ -6,7 +6,7 @@
 #include <chrono> 
 #include <ctime>
 using namespace std;
-
+double FVAL; //loss value at point in time
 int N_EVENTS = 10000;
 int N_CONVERGED;
 int N_CRYSTALS = 674;
@@ -37,7 +37,7 @@ struct Event{
 };
 
 
-double F(Event event, int event_number, int iteration, std::vector<double> constants){
+double F(Event event, int event_number, int iteration, std::vector<double> constants, FVAL){
   
 	int sum = 0;
         for(unsigned int c=0;c < event.cluster_size;c++){
@@ -45,7 +45,7 @@ double F(Event event, int event_number, int iteration, std::vector<double> const
                 sum+=constants[cry_i]*event.crystal_list.crystal_energy[c];
 	}
     	F+= pow((sum - event.track_energy)*(1/error) ,2);
-    
+        F = FVAL+F;
 	return F;
 }
 
@@ -60,7 +60,7 @@ std::vector<double> IncrementalGradientDescent(Event event, int j, std::vector<d
     bool converged =false;
     int k=0;
 	
-    double InitLoss =F(event,j,0, constants);
+    double InitLoss =F(event,j,0, constants, FVAL);
     std::vector<double> previous_constants = constants;
     
     while(converged == false and k < 100){
@@ -82,7 +82,7 @@ std::vector<double> IncrementalGradientDescent(Event event, int j, std::vector<d
                         constants[Cm] = new_c; 
                     }
              }
-            Loss = F(event, j, k, constants);
+            Loss = F(event, j, k, constants, FVAL);
             if((Loss <= InitLoss) and (Loss < MaxFunction)){
                 converged =true;
                 N_CONVERGED +=1;
