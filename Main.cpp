@@ -86,21 +86,16 @@ std::vector<double> IncrementalGradientDescent(Event event, int j, std::vector<d
             if((Loss <= InitLoss) and (Loss < MaxFunction)){
                 converged =true;
                 N_CONVERGED +=1;
-            }
+            } 
 
          k++;
        
     	}
     
     	if(converged == true){
-          for(unsigned int m=0; m<event.cluster_size;m++){
-                int Ci = event.crystal_list.crystal_number[m];
-                if (m==event.cluster_size-1){Loss = F(event,j, k,constants);}
-          }
-        
-        return constants;
-    	}else {
-        return previous_constants;
+		return constants;
+    	}else { //set back to beginning if this event is not usable!
+        	return previous_constants;
     	}
 }
 int main(){
