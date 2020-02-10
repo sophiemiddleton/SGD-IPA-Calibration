@@ -1,3 +1,6 @@
+//TO run:  g++ -std=c++11 dummyv7.cpp -o a.out, /a.out
+//.csv can be analysed with test.py
+
 #include <iostream>
 #include <math.h>
 #include <random>
@@ -6,29 +9,30 @@
 #include <chrono> 
 #include <ctime>
 using namespace std;
-double FVAL; //loss value at point in time
-int N_EVENTS = 10000;
-int N_CONVERGED;
-int N_CRYSTALS = 674;
-double step_size = 0.0035;//alpha
+
+double FVAL = 0;
+unsigned  N_EVENTS = 10000;
+unsigned  N_CONVERGE = 0;
+unsigned  N_CRYSTALS = 674;
+unsigned  N_TOTALHITS = 0;
+double Loss = 0;
+double step_size = 0.0035;
 double error = 3;
 double maxiterations = 100;
 double MaxFunction = 100;
-double dcmin = 0.1;
 
 std::vector<double> CalibrationConstants;
 
-
 struct CrystalList{
 	std::vector<double> crystal_energy;
-	std::vector<int> crystal_number;
+	std::vector<unsigned> crystal_number;
    	CrystalList();
-     	CrystalList(std::vector<double> _crystal_energy, std::vector<int> _crystal_number) : crystal_energy(_crystal_energy), crystal_number(_crystal_number) {};
+     	CrystalList(std::vector<double> _crystal_energy, std::vector<unsigned> _crystal_number) : crystal_energy(_crystal_energy), crystal_number(_crystal_number) {};
 };
 
 struct Event{
 	double track_energy;
-	int cluster_size;
+	unsigned  cluster_size;
 	CrystalList crystal_list;
 	Event();
 	Event(double _energy, double _size) : track_energy(_energy), cluster_size(_size){};
@@ -36,133 +40,162 @@ struct Event{
 	
 };
 
-
-double F(Event event, int event_number, int iteration, std::vector<double> constants, FVAL){
-  
-	int sum = 0;
+double FullF(std::vector<Event> epoch, std::vector<double> constants, double F){
+   unsigned  sum = 0;
+    F = 0;
+    for(unsigned int e = 0; e< N_EVENTS;e++){
+       
+        Event event = epoch[e];
         for(unsigned int c=0;c < event.cluster_size;c++){
-		int cry_i = event.crystal_list.crystal_number[c];
-                sum+=constants[cry_i]*event.crystal_list.crystal_energy[c];
-	}
-    	F+= pow((sum - event.track_energy)*(1/error) ,2);
-        F = FVAL+F;
+            unsigned  cry_i = event.crystal_list.crystal_number[c];
+            sum+=constants[cry_i]*event.crystal_list.crystal_energy[c];
+            
+        }
+        F+= pow((sum - event.track_energy)*(1/error) ,2);
+    }  
+
 	return F;
 }
 
 
-std::vector<double> IncrementalGradientDescent(Event event, int j, std::vector<double> constants, std::vector<double> seed_constants, double FVAL){
-    double Loss = FVAL;
-    double old_c ;
-    double new_c ;
-    double dc;
-    double dFdVm;
-    double dVmdc;
-    bool converged =false;
-    int k=0;
-	
-    double InitLoss =F(event,j,0, constants, FVAL);
-    std::vector<double> previous_constants = constants;
-    
-    while(converged == false and k < 100){
-       
-        for(unsigned int m=0; m<event.cluster_size;m++){
+double F(Event event, unsigned  event_number, unsigned  iteration, std::vector<double> constants, double F, bool is_end){
+   unsigned  sum = 0;
+    for(unsigned int c=0;c < event.cluster_size;c++){
+		unsigned  cry_i = event.crystal_list.crystal_number[c];
+        sum+=constants[cry_i]*event.crystal_list.crystal_energy[c];
+	}
+    F+= pow((sum - event.track_energy)*(1/error) ,2);
+    if(is_end ){
+        
+        cout<<event_number<<","<<iteration<<","<<F<<endl;
+        
+    }
+	return F;
+}
 
-                    int Cm = event.crystal_list.crystal_number[m];//Get crystal number
-                    double prediction =0;
-                    for(unsigned int i=0;i<event.cluster_size;i++){
-                        int Ci = event.crystal_list.crystal_number[i];//Get crystal number
-                        prediction +=constants[Ci]*event.crystal_list.crystal_energy[i];  //Find the coveriance matrix A terms  
-                     }
-                    dFdVm = 2*(prediction -event.track_energy);
-                    dVmdc = event.crystal_list.crystal_energy[m];
-              
-                    new_c = (constants[Cm] - step_size*(1/event.cluster_size)*(1/pow(error,2))*constants[Cm]*dFdVm*dVmdc);
-                    dc = abs(new_c - constants[Cm]); 
-                    if(dc < dcmin and abs(new_c - seed_constants[m])<dcmin){
-                        constants[Cm] = new_c; 
-                    }
+
+
+std::vector<double> IncrementalGradientDescent(Event event, unsigned  j, std::vector<double> constants, std::vector<double> seed_constants, double FVAL){
+        double Loss = FVAL;
+        double old_c ;
+        double new_c ;
+        double dc;
+        double dFdVm;
+        double dVmdc;
+        bool converged =false;
+        
+        double InitLoss =F(event,j,0, constants,FVAL,false);
+        std::vector<double> previous_constants = constants;
+        unsigned  k=0;
+        double Etrk = event.track_energy; //Get the trackers output
+        while(converged == false and k < 100){
+       
+            for(unsigned int m=0; m<event.cluster_size;m++){
+
+                        unsigned  Cm = event.crystal_list.crystal_number[m];//Get crystal number
+                        old_c = constants[Cm]; //Find previous constant
+                        double Vm=event.crystal_list.crystal_energy[m]; //Get crystal m's energy in this event and this hit
+                        double prediction =0;
+                        for(unsigned int i=0;i<event.cluster_size;i++){
+                            unsigned  Ci = event.crystal_list.crystal_number[i];//Get crystal number
+                            prediction +=constants[Ci]*event.crystal_list.crystal_energy[i];  //Find the coveriance matrix A terms
+                        }
+                        dFdVm = 2*(prediction -Etrk);
+                        dVmdc = Vm;
+                  
+                        new_c = (old_c - step_size *(1/pow(error,2))*constants[Cm]*dFdVm*dVmdc);
+                        dc = abs(new_c - old_c);
+                        if(dc < 0.1 and (new_c - seed_constants[m])<0.1){
+                            constants[Cm] = new_c;
+                        }
              }
-            Loss = F(event, j, k, constants, FVAL);
+            Loss = F(event, j, k, constants, Loss, false);
             if((Loss <= InitLoss) and (Loss < MaxFunction)){
                 converged =true;
                 N_CONVERGED +=1;
-            } 
+            }
 
          k++;
-       
-    	}
+    }
+    if(converged){
+          for(unsigned int m=0; m<event.cluster_size;m++){
+                unsigned  Ci = event.crystal_list.crystal_number[m];//Get crystal number
+                cout<<"updated "<<previous_constants[Ci]<<" "<<constants[Ci]<<" with k iterations "<<k<<endl;
+                if (m==event.cluster_size-1){Loss = F(event,j, k,constants, Loss,true);}
+          }
+        
+        return constants;
+    } else {
+        return previous_constants;
+    }
     
-    	if(converged == true){
-		return constants;
-    	}else { //set back to beginning if this event is not usable!
-        	return previous_constants;
-    	}
 }
+
 int main(){
     
-     	ofstream outputfile;
-     	outputfile.open("Info.csv");
-     	std::vector<Event> epoch;
-     	double offset; //used to set constant offest
-	std::vector<double> RawCalibrationResults; //from other calib sources
-	std::vector<double> offset_vector;
+     ofstream outputfile;
+     outputfile.open("Info.csv");
+     std::vector<Event> epoch;
+     double offset;
+
+     std::vector<double> RawCalibrationResults;
+	 std::vector<double> offset_vector;
      
-     	for(int c=0;c<N_CRYSTALS;c++){
+     for(unsigned  c=0;c<N_CRYSTALS;c++){
 		CalibrationConstants.push_back(0);
-     	}
+     }
     
 	 std::random_device rd;
-     	 std::mt19937 mt(rd());
+     std::mt19937 mt(rd());
 	 std::normal_distribution<double> te(46.,3.); 
 	 std::normal_distribution<double> cs(4.,1);
 	 std::uniform_real_distribution<double> cn(0, N_CRYSTALS);
 	 std::uniform_real_distribution<double> randoff(0.1, 1.0);
     
-	 for(int c=0;c<N_CRYSTALS;c++){
-		
-        	auto const off = randoff(mt);
-        	offset_vector.push_back(off);
-		RawCalibrationResults.push_back(off*0.9);//imagine that the raw constants are only 90% accurate (assume same for all crystals)
+	 for(unsigned  c=0;c<N_CRYSTALS;c++){
+        auto const off = randoff(mt);
+        offset_vector.push_back(off);
+		RawCalibrationResults.push_back(off*0.85);//imagine that the raw constants are only 90% accurate (assume same for all crystals)
 	 }
     
-         auto start = chrono::high_resolution_clock::now();
+     auto start = chrono::high_resolution_clock::now();
 	 for(size_t n=0;n<N_EVENTS;n++){
-         
-		if(n==0){
-            		CalibrationConstants = RawCalibrationResults; //seed with raw inputs
-       		}
+        if(n==0){
+            CalibrationConstants = RawCalibrationResults; //seed with raw inputs
+       }
          
 		auto const track_energy = te(mt);
 		auto const size = cs(mt);
-        	int cluster_size = round(size);
+        unsigned  cluster_size = round(size);
 		
-       		std::vector<double> crystal_energy;
-		std::vector<int> crystal_number;
+        std::vector<double> crystal_energy;
+		std::vector<unsigned> crystal_number;
 		
-		for(int m=0;m<cluster_size; m++){
-            		int C_number = round(cn(mt));
+		for(unsigned  m=0;m<cluster_size; m++){
+            unsigned  C_number = round(cn(mt));
 			crystal_number.push_back(C_number);
-            		offset = offset_vector[C_number];
-            		crystal_energy.push_back((1/offset)*track_energy/(cluster_size));
-			
+            offset = offset_vector[C_number];
+            crystal_energy.push_back((1/offset)*track_energy/(cluster_size));
 		}
        
 		CrystalList crystal_list(crystal_energy,crystal_number);
 		Event event(track_energy,cluster_size,crystal_list);
         
-		CalibrationConstants= IncrementalGradientDescent(event, n, CalibrationConstants, RawCalibrationResults, FVAL);
-		auto currenttime = chrono::high_resolution_clock::now();
-		auto eventduration = chrono::duration_cast<chrono::microseconds>(currenttime- start); 
-		outputfile<<n<<","<<eventduration.count()<<endl;
-		epoch.push_back(event);
-     	}
+        CalibrationConstants= IncrementalGradientDescent(event, n, CalibrationConstants, RawCalibrationResults, FVAL);
+        auto currenttime = chrono::high_resolution_clock::now();
+        auto eventduration = chrono::duration_cast<chrono::microseconds>(currenttime- start); 
+        //outputfile<<n<<","<<eventduration.count()<<endl;
+        epoch.push_back(event);
+     }
     
-	for(int i =0 ;i<N_CRYSTALS;i++){
+	for(unsigned  i =0 ;i<N_CRYSTALS;i++){
 			std::cout<<"constant for crystal "<<i<<" is "<<CalibrationConstants[i]<<"True Offset is "<<offset_vector[i]<<" Residuals "<<CalibrationConstants[i]-offset_vector[i]<<std::endl;
-          
-	}
+         outputfile<<i<<","<<CalibrationConstants[i]<<","<<offset_vector[i]<<","<<CalibrationConstants[i]-offset_vector[i]<<std::endl;
+            
+		}
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - start); 
-    cout<<"NEvents Processed "<<N_EVENTS<<" NEVents converged "<<N_CONVERGED<<"Time "<<duration.count()<<endl;
-    return 0;
+    double endLoss = FullF(epoch, CalibrationConstants, FVAL);
+    cout<<"NEvents Processed "<<N_EVENTS<<" NEVents converged "<<N_CONVERGED<<"Time "<<duration.count()<<" Final Loss function "<<endLoss<<endl;
+	return 0;
 }
