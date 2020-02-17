@@ -1,4 +1,4 @@
-# SGD.cc
+# SGD IPA Calibration Algortihm Development Code
 Code written as basic model for an incremental Stochastic Gradient Descent (SGD) Minimizer. The idea here is to minimize for "weights" which are in fact calibration constants for each of the calorimeter's crystals. This is currently just dummy code but it converges, it needs a lot of improvements before becoming used in practice.
 
 Current Implementation:
