@@ -45,39 +45,39 @@ struct Event{
 
 std::vector<Event> FakeDateMaker(std::vector<double> RawCalibrationResults, std::vector<double> offset_vector){
     
-    std::vector<Event> event_list;
-    
-    double offset;
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::normal_distribution<double> te(46.,3.); 
-    std::normal_distribution<double> cs(4.,1);
-    std::uniform_real_distribution<double> cn(0, N_CRYSTALS);
-    std::uniform_real_distribution<double> randoff(0.1, 1.0);
-    
-    for(size_t n=0;n<N_EVENTS;n++){
+	std::vector<Event> event_list;
+
+	double offset;
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	std::normal_distribution<double> te(46.,3.); 
+	std::normal_distribution<double> cs(4.,1);
+	std::uniform_real_distribution<double> cn(0, N_CRYSTALS);
+	std::uniform_real_distribution<double> randoff(0.1, 1.0);
+
+	for(size_t n=0;n<N_EVENTS;n++){
         
-        std::cout<<"[In FakeDataMaker()] Event Loop ..."<<n<<std::endl;
+        	std::cout<<"[In FakeDataMaker()] Event Loop ..."<<n<<std::endl;
 		
 		auto const track_energy = te(mt);
 		auto const size = cs(mt);
-        int cluster_size = round(size);
+		int cluster_size = round(size);
 		
-        std::vector<double> crystal_energy;
+        	std::vector<double> crystal_energy;
 		std::vector<int> crystal_number;
 		
 		for(int m=0;m<cluster_size; m++){
-            int C_number = round(cn(mt));
+            		int C_number = round(cn(mt));
 			crystal_number.push_back(C_number);
-            offset = offset_vector[C_number];
-            crystal_energy.push_back((1/offset)*track_energy/(cluster_size));
+            		offset = offset_vector[C_number];
+            		crystal_energy.push_back((1/offset)*track_energy/(cluster_size));
 		}
        
 		CrystalList crystal_list(crystal_energy,crystal_number);
          
 		Event event(n, track_energy,cluster_size,crystal_list);
         
-        event_list.push_back(event);
+        	event_list.push_back(event);
      }
     
     return event_list;
@@ -86,18 +86,18 @@ std::vector<Event> FakeDateMaker(std::vector<double> RawCalibrationResults, std:
 
 void SetOffsetVector(std::vector<double> &RawCalibrationResults, std::vector<double> &offset_vector){
     
-    std::vector<Event> event_list;
-    
-    double offset;
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_real_distribution<double> randoff(0.1, 1.0);
-    
-    for(int c=0;c<N_CRYSTALS;c++){
-         
-        std::cout<<"[In OffsetMaker()] Finding Raw Values ..."<<std::endl;
-        auto const off = randoff(mt);
-        offset_vector.push_back(off);
+	std::vector<Event> event_list;
+
+	double offset;
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	std::uniform_real_distribution<double> randoff(0.1, 1.0);
+
+	for(int c=0;c<N_CRYSTALS;c++){
+
+		std::cout<<"[In OffsetMaker()] Finding Raw Values ..."<<std::endl;
+		auto const off = randoff(mt);
+		offset_vector.push_back(off);
 		RawCalibrationResults.push_back(off*0.8);
 	 }
 }
@@ -105,18 +105,18 @@ void SetOffsetVector(std::vector<double> &RawCalibrationResults, std::vector<dou
 CrystalList FillCrystals(const char *CrystalsFile, unsigned int &n, int eventN){
 	std::cout<<"[In ReadInputData()] : opening "<<CrystalsFile<<std::endl;
 	
-    FILE *fC = fopen(CrystalsFile, "r");
+    	FILE *fC = fopen(CrystalsFile, "r");
 	if ( fC == NULL) {
 		std::cout<<"[In ReadDataInput()] : Error: Cannot open Cry files "<<std::endl;
 		exit(1);
 	}
 	
-    float EoP, E, P, CryE;
-    int eventT, runT, eventC, runC, CryId;
+    	float EoP, E, P, CryE;
+    	int eventT, runT, eventC, runC, CryId;
 
-    std::vector<double> crystal_energy;
+    	std::vector<double> crystal_energy;
 	std::vector<int> crystal_number;
-    n=0;
+    	n=0;
 	while(fscanf(fC, "%i,%i,%i,%f\n", &eventC, &runC, &CryId, &CryE)!=EOF){
             if (eventC == eventN){
                 crystal_energy.push_back(CryE);
@@ -125,9 +125,9 @@ CrystalList FillCrystals(const char *CrystalsFile, unsigned int &n, int eventN){
                 n++;
             }
 	}
-    CrystalList crystal_list(crystal_energy, crystal_number);
+    	CrystalList crystal_list(crystal_energy, crystal_number);
 	fclose(fC);
-    return crystal_list;
+    	return crystal_list;
 }
 
 
@@ -141,17 +141,17 @@ std::vector<Event> BuildEventsFromData(const char *CrystalsFile, const char *Tra
 		exit(1);
 	}
 	
-    float EoP, E, P;
-    int eventT, runT;
+    	float EoP, E, P;
+    	int eventT, runT;
     
 	while(fscanf(fT, "%i,%i,%f,%f,%f\n", &eventT, &runT, &EoP, &E, &P)!=EOF){
             unsigned int clSize;
             CrystalList crystal_list = FillCrystals(CrystalsFile, clSize, eventT);
-		    Event e(eventT, E, clSize ,crystal_list);
+	    Event e(eventT, E, clSize ,crystal_list);
             event.push_back(e);
 	}
 	std::cout<<"[In ReadInputData()] : closing "<<TrackFile<<" and "<<CrystalsFile<<std::endl;
-    fclose(fT);
+    	fclose(fT);
 	return event;
 }
 
@@ -167,7 +167,7 @@ unsigned int GetLines (const char *filename){
 }
 
 double FullF(std::vector<Event> event_list, std::vector<double> constants){
-	int sum = 0;
+    int sum = 0;
     double F = 0;
     for(unsigned int e = 0; e< N_EVENTS;e++){
         Event event = event_list[e];
@@ -192,22 +192,22 @@ double F(Event event, std::vector<double> constants){
 }
 
 std::vector<double> SGD(Event event, int j, std::vector<double> constants, double& FVAL){
-    std::cout<<"[In SGD ()] Beginning ..."<<std::endl;
-    N_EVENTS =  GetLines("Tracks.csv");
-    double Loss = FVAL;
+	std::cout<<"[In SGD ()] Beginning ..."<<std::endl;
+	N_EVENTS =  GetLines("Tracks.csv");
+	double Loss = FVAL;
 	double old_c ;
 	double new_c ;
-    double dc;
-    double dFdCi;
-    bool converged =false;
-    
-    double InitLoss = F(event, constants);
-    std::cout<<"[In SGD()] Initial Loss is "<<InitLoss<<std::endl;
-    std::vector<double> previous_constants = constants;
-    unsigned int k = 0;
-    double Etrk = event.track_energy;  
-    
-    while(converged == false and k < MaxIterations){
+	double dc;
+	double dFdCi;
+	bool converged =false;
+
+	double InitLoss = F(event, constants);
+	std::cout<<"[In SGD()] Initial Loss is "<<InitLoss<<std::endl;
+	std::vector<double> previous_constants = constants;
+	unsigned int k = 0;
+	double Etrk = event.track_energy;  
+
+	while(converged == false and k < MaxIterations){
        
         for(unsigned int m=0; m<event.cluster_size;m++){
             int Cm = event.crystal_list.crystal_number[m];
@@ -261,56 +261,56 @@ void Randomize(std::vector<Event> &EventList){
 }
 
 int main(){
-     bool fake = false;
-     std::cout<<"[In Main()] Beginning ..."<<std::endl;
-     ofstream outputfile, TrackFile, CrystalsFile;
-     outputfile.open("SGDv1.csv");
-    
-     outputfile<<"cryId,reco,true,Residual"<<std::endl;
-    
-     std::vector<double> offset_vector;
-     std::vector<double> RawCalibrationResults;
+	bool fake = false;
+	std::cout<<"[In Main()] Beginning ..."<<std::endl;
+	ofstream outputfile, TrackFile, CrystalsFile;
+	outputfile.open("SGDv1.csv");
 
-     for(int c=0;c<N_CRYSTALS;c++){
-         
+	outputfile<<"cryId,reco,true,Residual"<<std::endl;
+
+	std::vector<double> offset_vector;
+	std::vector<double> RawCalibrationResults;
+
+	for(int c=0;c<N_CRYSTALS;c++){
+
 		CalibrationConstants.push_back(0);
-         
-     }
+
+	}
     
-	 SetOffsetVector(RawCalibrationResults, offset_vector);
-     std::vector<Event> event_list;
-     if(fake) event_list = FakeDateMaker(RawCalibrationResults, offset_vector);
-    if(!fake){
+ 	SetOffsetVector(RawCalibrationResults, offset_vector);
+     	std::vector<Event> event_list;
+     	if(fake) event_list = FakeDateMaker(RawCalibrationResults, offset_vector);
+    	if(!fake){
         
-         event_list = BuildEventsFromData("Crystals.csv","Tracks.csv");
-         std::cout<<"Found "<<event_list.size()<<" Events "<<std::endl;
-     }
-     auto start = chrono::high_resolution_clock::now();
-     CalibrationConstants = RawCalibrationResults;
-	 
-     for(unsigned int l = 0; l < 1 ; l++){
-         int N_CONVERGED = 0;
-         for(auto const& event : event_list){
+		event_list = BuildEventsFromData("Crystals.csv","Tracks.csv");
+		std::cout<<"Found "<<event_list.size()<<" Events "<<std::endl;
+    	 }
+	auto start = chrono::high_resolution_clock::now();
+	CalibrationConstants = RawCalibrationResults;
 
-            Randomize(event_list);
-            CalibrationConstants = SGD(event, event.EventNumber, CalibrationConstants,  FVAL);
+	for(unsigned int l = 0; l < 1 ; l++){
+		int N_CONVERGED = 0;
+		for(auto const& event : event_list){
 
-         }
+		Randomize(event_list);
+		CalibrationConstants = SGD(event, event.EventNumber, CalibrationConstants,  FVAL);
+
+         	}
        
-     }
+     	}
 	for(int i =0 ;i<N_CRYSTALS;i++){
         
         std::cout<<"constant for crystal "<<i<<" is "<<CalibrationConstants[i]<<"True Offset is "<<offset_vector[i]<<" Residuals "<<CalibrationConstants[i]-offset_vector[i]<<std::endl;
         
         outputfile<<i<<","<<CalibrationConstants[i]<<","<<offset_vector[i]<<","<<CalibrationConstants[i]-offset_vector[i]<<std::endl;
             
-    }
+    	}
     
-    auto end = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(end - start); 
-    
-    double endLoss = FullF(event_list, CalibrationConstants);
-    cout<<"NEvents Processed "<<N_EVENTS<<" NEVents converged "<<N_CONVERGED<<"Time "<<duration.count()<<" Final Loss function "<<endLoss<<endl;
-    
+	auto end = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::microseconds>(end - start); 
+
+	double endLoss = FullF(event_list, CalibrationConstants);
+	cout<<"NEvents Processed "<<N_EVENTS<<" NEVents converged "<<N_CONVERGED<<"Time "<<duration.count()<<" Final Loss function "<<endLoss<<endl;
+
 	return 0;
-}
+	}
